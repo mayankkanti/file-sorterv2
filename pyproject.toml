@@ -1,0 +1,10 @@
+[project]
+name = "filesorterv2"
+version = "0.1.0"
+description = "A background filesorter"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "watchdog>=6.0.0",
+    "win11toast>=0.36.3",
+]

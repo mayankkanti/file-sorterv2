@@ -1,0 +1,125 @@
+from pathlib import Path
+import shutil
+
+from config.models import FolderConfig
+from logger import app_logger
+
+from win11toast import toast, notify, update_progress
+
+
+
+
+def verify_and_create_destination(folder_config: FolderConfig):
+    base_path = Path(folder_config.path)
+
+    for rule in folder_config.rules:
+        if rule.enabled:
+            (base_path / rule.destination).mkdir(parents=True,exist_ok=True)
+
+
+def get_files(path):
+    path = Path(path)
+    exclude_files = ['desktop.ini', 'thumbs.db']
+    return [
+        file.name
+        for file in path.iterdir()
+        if file.is_file() and file.name not in exclude_files
+    ]
+
+
+def sort_files(folder_config: FolderConfig):
+    base_path = Path(folder_config.path)
+
+    app_logger.info(f"Sorter was called for folder: {base_path}")
+    app_logger.info(f"Sorting with rules: {folder_config.rules}")
+    app_logger.info("Verifying and creating destination folders if needed")
+
+    verify_and_create_destination(folder_config)
+
+    file_list = get_files(base_path)
+    app_logger.info(f"Found {len(file_list)} files to sort.")
+    app_logger.info(f"Files: {file_list}")
+    if len(file_list) == 0:
+        app_logger.info("No files to sort.")
+        return
+
+    # Map files by extension
+    extension_map = {}
+
+    for file in file_list:
+        ext = Path(file).suffix.lower()
+
+        if ext not in extension_map:
+            extension_map[ext] = []
+
+        extension_map[ext].append(file)
+
+    # Map destination -> files
+    destination_map = {}
+
+
+    for rule in folder_config.rules:
+
+        if not rule.enabled:
+            continue
+
+        for ext in rule.extensions:
+            ext = ext.lower()
+
+            if ext not in extension_map:
+                continue
+
+            if rule.destination not in destination_map:
+                destination_map[rule.destination] = []
+
+            destination_map[rule.destination].extend(extension_map[ext])
+    app_logger.info(f"Destination map: {destination_map}")
+    no_of_files_to_be_sorted = sum(len(files) for files in destination_map.values())
+    print(no_of_files_to_be_sorted)
+
+    notify(progress={
+        'title': 'FileSorter',
+        'status': 'sorting...',
+        'value': '0',
+        'valueStringOverride': f'0/ {no_of_files_to_be_sorted} files to be sorted'
+    })
+    # Move files
+    for destination, files in destination_map.items():
+
+        destination_dir = base_path / destination
+
+        no_of_files_sorted = 0
+
+        for file in files:
+
+            src_path = base_path / file
+            dest_path = destination_dir / file
+
+            if dest_path.exists():
+                app_logger.warning(f"File already exists: {dest_path}")
+                continue
+
+            app_logger.info(f"Moving {src_path} -> {dest_path}")
+
+            try:
+                dest_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(
+                    str(src_path),
+                    str(dest_path)
+                )
+                no_of_files_sorted += 1
+                update_progress(
+                    {
+                        'value': no_of_files_sorted/ no_of_files_to_be_sorted,
+                        'valueStringOverride': f'{no_of_files_sorted}/ {no_of_files_to_be_sorted} files' 
+                    }
+                )
+
+            except Exception as e:
+                app_logger.error(f"Error moving file {src_path} to {dest_path}: {e}")
+
+    app_logger.info(f"Sorting complete. {no_of_files_sorted} files sorted.")
+    toast(
+        "FileSorter",
+        f"Sorting complete for folder: {base_path}. {no_of_files_sorted} files sorted.",
+    )

@@ -1,0 +1,2 @@
+# for qt widgets
+https://doc.qt.io/qtforpython-6/PySide6/QtWidgets/

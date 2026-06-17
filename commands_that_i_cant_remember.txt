@@ -1,0 +1,2 @@
+# .ui to .py
+pyside6-uic {filename_input}.ui -o {filename_ouput}.py

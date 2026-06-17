@@ -1,0 +1,151 @@
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+from threading import Lock, Event
+import time
+import os
+
+from core.sorter import sort_files
+from logger import watcher_logger
+from config import load_config, get_watcher_paths
+
+
+activity_lock = Lock()
+sorting_event = Event()
+
+FOLDER_ACTIVITY = {}
+FOLDER_LAST_PROCESSED = {}
+
+APP_CONFIG = load_config()
+WATCHER_PATHS = get_watcher_paths(APP_CONFIG)
+
+class Handler(FileSystemEventHandler):
+    def on_any_event(self, event):
+
+        # Ignore events generated while sorting
+        if sorting_event.is_set():
+            return
+
+        folder = os.path.dirname(event.src_path)
+
+        with activity_lock:
+            FOLDER_ACTIVITY[folder] = time.time()
+
+        watcher_logger.info(
+            f"{event.event_type}: {event.src_path}"
+        )
+
+
+def process_folder(folder):
+    watcher_logger.info(
+        f"Folder inactive, processing: {folder}"
+    )
+
+    folder_config = None
+
+    for config in APP_CONFIG.watched_folders:
+        # normalize paths for comparison
+        config_path = os.path.normcase(os.path.normpath(config.path))
+        folder_path = os.path.normcase(os.path.normpath(folder))
+
+        if config_path == folder_path:
+            folder_config = config
+            break
+
+    if folder_config is None:
+        watcher_logger.warning(
+            f"No matching sorter found for {folder}, skipping."
+        )
+        return
+
+    watcher_logger.info(
+        f"Found matching sorter for {folder}, processing..."
+    )
+
+    sorting_event.set()
+
+    try:
+        sort_files(folder_config)
+
+    except Exception:
+        watcher_logger.exception(
+            f"Error while processing folder: {folder}"
+        )
+
+    finally:
+        sorting_event.clear()
+
+
+def inactivity_monitor(timeout):
+
+    # Don't look for inactivity while sorting
+    if sorting_event.is_set():
+        return
+
+    now = time.time()
+
+    with activity_lock:
+        activity_snapshot = list(FOLDER_ACTIVITY.items())
+
+    for folder, last_seen in activity_snapshot:
+
+        with activity_lock:
+            last_processed = FOLDER_LAST_PROCESSED.get(folder, 0)
+
+        if (
+            now - last_seen >= timeout
+            and last_processed < last_seen
+        ):
+            process_folder(folder)
+
+            with activity_lock:
+                FOLDER_LAST_PROCESSED[folder] = now
+
+
+def run():
+    watcher_logger.info("Starting watcher...")
+    watcher_logger.info(
+        f"Watcher configuration: {APP_CONFIG}"
+    )
+
+    event_handler = Handler()
+    observer = Observer()
+
+    watcher_logger.info(
+        f"Setting up watcher for paths: {WATCHER_PATHS}"
+    )
+
+    now = time.time()
+
+    for path in WATCHER_PATHS:
+
+        if not os.path.exists(path):
+            watcher_logger.warning(
+                f"Path does not exist: {path}"
+            )
+            continue
+
+        with activity_lock:
+            FOLDER_ACTIVITY[path] = now
+
+        observer.schedule(
+            event_handler,
+            path,
+            recursive=False
+        )
+
+        watcher_logger.info(
+            f"Watching path: {path}"
+        )
+
+    observer.start()
+
+    try:
+        while True:
+            inactivity_monitor(10)
+            time.sleep(1)
+
+    except KeyboardInterrupt:
+        watcher_logger.info("Stopping watcher...")
+        observer.stop()
+
+    observer.join()
