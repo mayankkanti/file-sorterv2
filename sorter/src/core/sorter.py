@@ -1,9 +1,9 @@
 # rewrite counter: 3
 
 from pathlib import Path
-from sorter.src.config.models import FolderConfig
+from config.models import FolderConfig
 from typing import List, Set, Dict
-from sorter.src.logger import app_logger
+from logger import app_logger
 from shutil import move
 import secrets, string
 

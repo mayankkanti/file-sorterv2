@@ -1,5 +1,5 @@
 import typer
-from sorter.src.core import Watcher
+from core import Watcher
 
 app = typer.Typer()
 
