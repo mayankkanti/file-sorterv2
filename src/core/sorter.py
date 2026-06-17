@@ -7,6 +7,8 @@ from logger import app_logger
 from shutil import move
 import secrets, string
 
+from win11toast import toast # type: ignore
+
 class Sorter:
     def __init__(self, folder_config: FolderConfig):
         self.folder_config: FolderConfig = folder_config
@@ -98,3 +100,4 @@ class Sorter:
                     app_logger.error(f"Errored while moving file {file} to {destination}")
                     app_logger.error(e)
         app_logger.info(f"Sorting Completed. {self.no_of_files_sorted}/{self.no_of_files_to_sort} files sorted.")
+        toast("FileSorter", f"Sorting Completed. {self.no_of_files_sorted}/{self.no_of_files_to_sort} files sorted.")

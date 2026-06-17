@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Literal, Optional
+from typing import Literal
 
 @dataclass
 class AppSettings:
@@ -14,7 +14,7 @@ class Rule:
     type: Literal["extension"]
     enabled: bool
     destination: str
-    extensions: list[str] = field(default_factory=list)
+    extensions: list[str] = field(default_factory=list) # type: ignore
 
 @dataclass
 class FolderConfig:

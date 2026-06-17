@@ -9,7 +9,6 @@ from logger import watcher_logger
 from core.sorter import Sorter
 import time
 
-
 class Watcher:
 
     class Handler(FileSystemEventHandler):
@@ -51,13 +50,17 @@ class Watcher:
     def run(self) -> None:
         self._running = True
         watcher_logger.info("Starting watcher...")
-        for path in self.watcher_paths:
-            self.observer.schedule(
-                self.handler,
-                str(path),
-                recursive=False
-            )
-            watcher_logger.info(f"Watching {path}")
+        if self.watcher_paths:
+            for path in self.watcher_paths:
+                self.observer.schedule(
+                    self.handler,
+                    str(path),
+                    recursive=False
+                )
+                watcher_logger.info(f"Watching {path}")
+        else:
+            watcher_logger.info("No valid paths to watch. Exiting Watcher.")
+            return
 
         self.observer.start()
 
