@@ -145,10 +145,10 @@ def get_watcher_paths(config: AppConfig) -> list[str]:
 def get_config_path() -> Path:
     return CONFIG_PATH
 
-def get_logs_dir() -> list[Path]:
+def get_log_paths() -> list[Path]:
     logs_dir = CONFIG_DIR / "logs"
-    app_log = logs_dir / "app.log"
-    watcher_log = logs_dir / "watcher.log"
+    app_log = logs_dir / "app" / "app.log"
+    watcher_log = logs_dir / "watcher" / "watcher.log"
     logs_dir.mkdir(parents=True, exist_ok=True)
     return [app_log, watcher_log]
 

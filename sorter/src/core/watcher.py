@@ -3,10 +3,10 @@
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from threading import Event, Lock, Thread
-from config import load_config, get_watcher_paths,FolderConfig, AppConfig
+from sorter.src.config import load_config, get_watcher_paths,FolderConfig, AppConfig
 from pathlib import Path
-from logger import watcher_logger
-from core.sorter import Sorter
+from sorter.src.logger import watcher_logger
+from sorter.src.core.sorter import Sorter
 import time
 
 class Watcher:

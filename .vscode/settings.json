@@ -1,0 +1,6 @@
+{
+  "python.analysis.extraPaths": [
+    "./sorter/src"
+  ],
+  "python.defaultInterpreterPath": "${workspaceFolder}/sorter/.venv/Scripts/python.exe"
+}
