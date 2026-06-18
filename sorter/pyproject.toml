@@ -9,3 +9,8 @@ dependencies = [
     "watchdog>=6.0.0",
     "win11toast>=0.36.3",
 ]
+
+[dependency-groups]
+dev = [
+    "pyinstaller>=6.21.0",
+]
