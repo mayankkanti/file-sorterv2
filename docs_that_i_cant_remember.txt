@@ -1,2 +1,8 @@
 # for qt widgets
 https://doc.qt.io/qtforpython-6/PySide6/QtWidgets/
+
+# mantine
+https://mantine.dev/core/package/
+
+#tauri
+https://v2.tauri.app/develop/calling-rust/#basic-example

@@ -91,6 +91,8 @@ src-tauri/binaries/
 
 node_modules/
 
+yap.md
+
 # Keep lockfiles tracked!
 # DO NOT ignore:
 # bun.lock

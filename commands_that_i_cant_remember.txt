@@ -1,2 +1,5 @@
 # .ui to .py
 pyside6-uic {filename_input}.ui -o {filename_ouput}.py
+
+# bundle to exe
+uv run pyinstaller --onefile src/main.py --name filesorter
