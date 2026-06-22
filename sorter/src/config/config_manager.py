@@ -2,6 +2,7 @@ import json
 from win11toast import toast # type: ignore
 from pathlib import Path
 from .models import AppConfig, AppSettings, FolderConfig, Rule
+from typing import Any
 
 CONFIG_DIR = Path.home() / "AppData" / "Roaming" / "FileSorter"
 CONFIG_PATH = CONFIG_DIR / "config.json"
@@ -16,7 +17,7 @@ def _default_config() -> AppConfig:
         watched_folders=[],
     )
 
-def _to_dict(config: AppConfig) -> dict: # type: ignore
+def to_dict(config: AppConfig) -> dict: # type: ignore
     return {
         "version": config.version,
         "app": {
@@ -46,11 +47,30 @@ def _to_dict(config: AppConfig) -> dict: # type: ignore
         ],
     } # type: ignore
 
+def from_dict(data: dict[str, Any]) -> AppConfig:
+    return AppConfig(
+        version=data["version"],
+        app=AppSettings(**data["app"]),
+        watched_folders=[
+            FolderConfig(
+                id=folder["id"],
+                path=folder["path"],
+                enabled=folder["enabled"],
+                recursive=folder["recursive"],
+                rules=[
+                    Rule(**rule)
+                    for rule in folder["rules"]
+                ],
+            )
+            for folder in data["watched_folders"]
+        ],
+    )
+
 def _write_config(config: AppConfig) -> None:
     """Atomic save — temp file + rename so a crash never corrupts config."""
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     tmp = CONFIG_PATH.with_suffix(".tmp")
-    tmp.write_text(json.dumps(_to_dict(config), indent=2), encoding="utf-8")
+    tmp.write_text(json.dumps(to_dict(config), indent=2), encoding="utf-8")
     tmp.replace(CONFIG_PATH)
 
 def _validate_config(config: AppConfig) -> list[str]:
